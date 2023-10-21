@@ -1,0 +1,65 @@
+name: Build Proto Files
+
+on:
+  release:
+    types: [created, edited]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.9
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install grpcio-tools mypy-protobuf
+
+    - name: Create build directory
+      run: mkdir -p ./build/client
+
+    - name: Generate build files
+      run: |
+        BUILD_PATH=./build/client
+        python -m grpc_tools.protoc -I ./proto/ --python_out=${BUILD_PATH} --mypy_out=${BUILD_PATH} --grpc_python_out=${BUILD_PATH} ./proto/client.proto
+
+    - name: List generated files in ./build/client
+      run: ls -al ./build/client
+
+    - name: Define package name and version
+      run: |
+        echo "PACKAGE_NAME=drive-bot-proto" >> $GITHUB_ENV
+        echo "PACKAGE_NAME_UNDERSCORES=drive_bot_proto" >> $GITHUB_ENV
+        echo "PACKAGE_VERSION=${GITHUB_REF/refs\/tags\/v/}" >> $GITHUB_ENV
+
+    - name: Prepare files for package
+      run: |
+        touch ./build/client/__init__.py
+        touch ./build/client/py.typed
+        mkdir ./package-folder
+        cp -R ./build/client ./package-folder/${PACKAGE_NAME_UNDERSCORES}
+        cp ./dist/python/setup.py ./package-folder/
+        cd ./package-folder/${PACKAGE_NAME_UNDERSCORES}
+        sed -i "s/from apps.[[:alnum:]_]*/from ./" *.py*
+        cd ..
+        sed -i "s/%NAME%/${PACKAGE_NAME_UNDERSCORES}/g" setup.py
+        sed -i "s/%VERSION%/${PACKAGE_VERSION}/g" setup.py
+
+    - name: Install packaging tools
+      run: pip install setuptools wheel twine
+
+    - name: Build and publish package
+      run: |
+        cd ./package-folder
+        python setup.py sdist bdist_wheel
+        python -m twine upload --repository-url https://upload.pypi.org/legacy/ dist/* --verbose
+      env:
+        TWINE_USERNAME: __token__
+        TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}

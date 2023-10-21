@@ -1,0 +1,147 @@
+syntax = "proto3";
+
+package drive_bot.v1;
+
+
+enum Language {
+  LANG_RU = 0;
+  LANG_EN = 1;
+  LANG_KA = 2;
+  LANG_UK = 3;
+  LANG_AZ = 4;
+  LANG_HY = 5;
+  LANG_TR = 6;
+}
+
+
+message Ticket {
+  uint32 id = 1;
+  uint32 external_id = 2;
+  string question = 3;
+  optional uint32 image_id = 4;
+  optional string description = 5;
+  repeated uint32 categories = 6;
+  uint32 topic_id = 7;
+}
+
+message Answer {
+  uint32 id = 1;
+  uint32 ticket_id = 2;
+  string answer = 3;
+  bool is_valid = 4;
+}
+
+message Category {
+  uint32 id = 1;
+  string name = 2;
+  optional string description = 3;
+}
+
+message Topic {
+  uint32 id = 1;
+  string name = 2;
+}
+
+message Image {
+  bytes image_bytes = 1;
+  string mime_type = 2;
+}
+
+
+message GetTicketsResponse {
+    repeated Ticket tickets = 1;
+    uint32 count = 2;
+}
+
+message BaseRequest {
+  optional uint32 limit = 1;
+  optional uint32 offset = 2;
+  optional Language lang = 3;
+}
+
+
+message GetTicketsRequest {
+  optional uint32 limit = 1;
+  optional uint32 offset = 2;
+  optional Language lang = 3;
+  optional uint32 external_id = 4;
+  repeated uint32 categories_ids = 5;
+  repeated uint32 topic_ids = 6;
+}
+
+
+message GetAnswersRequest {
+  optional uint32 limit = 1;
+  optional uint32 offset = 2;
+  optional Language lang = 3;
+  optional uint32 ticket_id = 4;
+  optional bool is_valid = 5;
+}
+
+message GetAnswersResponse {
+  repeated Answer answers = 1;
+  uint32 count = 2;
+}
+
+message GetCategoriesResponse {
+  repeated Category categories = 1;
+  uint32 count = 2;
+}
+
+message GetTopicsResponse {
+  repeated Topic topics = 1;
+  uint32 count = 2;
+}
+
+message GetEntityByIdRequest {
+  uint32 id = 1;
+  optional Language lang = 2;
+}
+
+message GetImageByIdResponse {
+  oneof message {
+    Image image = 1;
+    string error = 2;
+  }
+}
+
+message GetTicketByIdResponse {
+  oneof message {
+    Ticket ticket = 1;
+    string error = 2;
+  }
+}
+
+message GetAnswerByIdResponse {
+  oneof message {
+    Answer answer = 1;
+    string error = 2;
+  }
+}
+
+message GetCategoryByIdResponse {
+  oneof message {
+    Category category = 1;
+    string error = 2;
+  }
+}
+
+message GetTopicByIdResponse {
+  oneof message {
+    Topic topic = 1;
+    string error = 2;
+  }
+}
+
+
+service DriveBotService {
+  rpc GetTickets(GetTicketsRequest) returns (GetTicketsResponse) {};
+  rpc GetAnswers(GetAnswersRequest) returns (GetAnswersResponse) {};
+  rpc GetCategories(BaseRequest) returns (GetCategoriesResponse) {};
+  rpc GetTopics(BaseRequest) returns (GetTopicsResponse) {};
+  rpc GetImageById(GetEntityByIdRequest) returns (GetImageByIdResponse) {};
+  rpc GetTicketById(GetEntityByIdRequest) returns (GetTicketByIdResponse) {};
+  rpc GetAnswerById(GetEntityByIdRequest) returns (GetAnswerByIdResponse) {};
+  rpc GetCategoryById(GetEntityByIdRequest) returns (GetCategoryByIdResponse) {};
+  rpc GetTopicById(GetEntityByIdRequest) returns (GetTopicByIdResponse) {};
+}
