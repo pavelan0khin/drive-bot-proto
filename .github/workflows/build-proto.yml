@@ -29,6 +29,9 @@ jobs:
       run: |
         BUILD_PATH=./build/client
         python -m grpc_tools.protoc -I ./proto/ --python_out=${BUILD_PATH} --mypy_out=${BUILD_PATH} --grpc_python_out=${BUILD_PATH} ./proto/client.proto
+        
+        # Fix relative import
+        sed -i 's/import client_pb2 as/from . import client_pb2 as/' ${BUILD_PATH}/client_pb2_grpc.py
 
     - name: List generated files in ./build/client
       run: ls -al ./build/client
